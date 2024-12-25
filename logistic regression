@@ -1,0 +1,56 @@
+import numpy as np
+from sklearn.datasets import make_blobs
+
+class LogisticRegression():
+    def __init__(self, X, learning_rate=0.1, num_iters=10000):
+        self.lr = learning_rate
+        self.num_iters = num_iters
+        self.m, self.n = X.shape
+
+    def train(self, X, Y):
+        self.weights = np.zeros((self.n, 1))
+        self.bias = 0
+
+        for it in range(self.num_iters + 1):
+            # Prediction
+            y_predict = self.sigmoid(np.dot(X, self.weights) + self.bias)
+            
+            # Cost computation (avoiding log(0) error using np.clip)
+            y_predict = np.clip(y_predict, 1e-7, 1 - 1e-7)
+            cost = -1 / self.m * np.sum(Y * np.log(y_predict) + (1 - Y) * np.log(1 - y_predict))
+            
+            # Gradients
+            dw = 1 / self.m * np.dot(X.T, (y_predict - Y))
+            db = 1 / self.m * np.sum(y_predict - Y)
+            
+            # Update parameters
+            self.weights -= self.lr * dw
+            self.bias -= self.lr * db
+
+            # Print cost every 1000 iterations
+            if it % 1000 == 0:
+                print(f'Cost after iteration {it}: {cost}')
+
+        return self.weights, self.bias
+
+    def predict(self, X):
+        y_predict = self.sigmoid(np.dot(X, self.weights) + self.bias)
+        y_predict_labels = y_predict > 0.5
+        return y_predict_labels.astype(int)
+
+    def sigmoid(self, z):
+        return 1 / (1 + np.exp(-z))
+
+if __name__ == '__main__':
+    np.random.seed(1)
+    X, y = make_blobs(n_samples=1000, centers=2)
+    y = y[:, np.newaxis]
+
+    # Train logistic regression model
+    logreg = LogisticRegression(X)
+    w, b = logreg.train(X, y)
+    
+    # Make predictions
+    y_predict = logreg.predict(X)
+    accuracy = np.sum(y == y_predict) / X.shape[0]
+    print(f'Accuracy: {accuracy}')
